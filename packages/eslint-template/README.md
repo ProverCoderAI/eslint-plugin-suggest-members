@@ -1,70 +1,104 @@
-# `eslint-template`
+# `@effect-template/eslint-plugin-suggest-members`
 
-An example ESLint plugin showing typed linting with `@typescript-eslint/utils`.
+Production‑ready ESLint plugin that suggests corrections for typos in TypeScript/JavaScript code. Built with Functional Core / Imperative Shell and Effect‑TS.
 
-For documentation on custom ESLint plugins with typescript-eslint, see: <https://typescript-eslint.io/developers/custom-rules>.
+## ✨ Key Features
+
+- Smart suggestions for typos (similarity scoring)
+- TypeScript‑aware diagnostics with signatures
+- Filesystem‑based module path suggestions
+- Fully typed, Effect‑TS based architecture
+
+## ⚙️ Configuration (ESLint v9+ Flat Config)
 
 ```js
 // eslint.config.js
-import eslint from '@eslint/js';
-import exampleTypedLinting from 'eslint-template'
-import tseslint from 'typescript-eslint';
+import suggestMembers from "@effect-template/eslint-plugin-suggest-members"
 
-export default tseslint.config(
-    { ignores: ["lib"] },
-    eslint.configs.recommended,
-    tseslint.configs.recommendedTypeChecked,
-    exampleTypedLinting.configs.recommended // 👈
-    {
-        languageOptions: {
-            parserOptions: {
-                projectService:true,
-                tsconfigRootDir: import.meta.dirname,
-            },
-        },
+export default [
+  {
+    files: ["**/*.{ts,tsx,js,jsx}"],
+    plugins: {
+      "suggest-members": suggestMembers
     },
-);
+    rules: {
+      "suggest-members/suggest-exports": "error",
+      "suggest-members/suggest-imports": "error",
+      "suggest-members/suggest-members": "error",
+      "suggest-members/suggest-missing-names": "error",
+      "suggest-members/suggest-module-paths": "error"
+    }
+  }
+]
 ```
 
-## Rules
+## ✅ Example Diagnostics
 
-<!-- begin auto-generated rules list -->
+### Export Suggestions (`suggest-exports`)
+```ts
+// ❌ Typo in React hook import
+export { useStae, useEffect } from "react"
+// ✅ ESLint Error: Export 'useStae' does not exist on type 'typeof import("react")'. Did you mean:
+//    - useState
+//    - useRef
+//    - useMemo
+//    - useCallback
+```
 
-💭 Requires [type information](https://typescript-eslint.io/linting/typed-linting).
+### Member Suggestions (`suggest-members`)
+```ts
+// ❌ Typo in localStorage method
+localStorage.get1Item("token")
+// ✅ ESLint Error: Property 'get1Item' does not exist on type 'Storage'. Did you mean:
+//    - getItem(key: string): string | null
+//    - setItem(key: string, value: string)
+//    - removeItem(key: string)
+//    - clear(): void
+```
 
-| Name                                                   | Description               | 💭 |
-| :----------------------------------------------------- | :------------------------ | :- |
-| [no-loop-over-enums](docs/rules/no-loop-over-enums.md) | Avoid looping over enums. | 💭 |
+### Module Path Suggestions (`suggest-module-paths`)
+```ts
+// ❌ Typo in file path
+import styles from "./HamsterKo1mbatPage.css"
+// ✅ ESLint Error: Cannot find module "./HamsterKo1mbatPage.css". Did you mean:
+//    - ./HamsterKombatPage.css
+//    - ./HamsterKombatPage.tsx
+//    - ./HamsterKombatPage
+//    - ../ThemeParamsPage.css
+```
 
-<!-- end auto-generated rules list -->
+### Import Suggestions (`suggest-imports`)
+```ts
+// ❌ Typo in named import
+import { saveRe1f } from "./hooks"
+// ✅ ESLint Error: Export 'saveRe1f' does not exist on type 'typeof import("./hooks")'. Did you mean:
+//    - saveRef
+//    - saveState
+//    - useRef
+//    - useState
+```
+
+### Missing Name Suggestions (`suggest-missing-names`)
+```ts
+// ❌ Typo in local identifier
+const formatGree1ting = () => "ok"
+formatGreeting()
+// ✅ ESLint Error: Cannot find name 'formatGreeting'. Did you mean:
+//    - formatGree1ting(): string
+```
+
+## 📚 Rules
+
+| Name | Description | TS Required |
+| --- | --- | --- |
+| [suggest-exports](docs/rules/suggest-exports.md) | Suggests corrections for missing exports | ✅ |
+| [suggest-imports](docs/rules/suggest-imports.md) | Suggests corrections for missing imports | ✅ |
+| [suggest-members](docs/rules/suggest-members.md) | Suggests corrections for missing members | ✅ |
+| [suggest-missing-names](docs/rules/suggest-missing-names.md) | Suggests corrections for unresolved identifiers | ✅ |
+| [suggest-module-paths](docs/rules/suggest-module-paths.md) | Suggests corrections for missing module paths | ❌ |
 
 ## Development
 
-To set up this individual package, `cd` to the path to it, then install dependencies:
-
-```shell
-cd path/to/eslint-template
-npm i
+```sh
+pnpm --filter @effect-template/eslint-template test
 ```
-
-Then build files into the `lib` directory with TypeScript:
-
-```shell
-npm run tsc
-```
-
-You'll then be able to run standard package scripts:
-
-- `npm run docs`: Regenerates documentation using [`eslint-doc-generator`](https://github.com/bmish/eslint-doc-generator)
-  - `npm run docs --check`: Validates that documentation is generated and up-to-date.
-- `npm run lint`: Linting this plugin itself with ESLint
-
-### Testing
-
-This example uses [Vitest](https://vitest.dev):
-
-```shell
-npm run test
-```
-
-Note that files don't need to have been built to the `lib` directory to run tests.

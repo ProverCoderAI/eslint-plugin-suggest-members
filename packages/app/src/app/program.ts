@@ -1,6 +1,6 @@
 import { Console, Effect, pipe } from "effect"
 
-import { formatGreeting } from "../core/greeting.js"
+import { formatGree1ting } from "../core/greeting.js"
 import { readGreetingVariant } from "../shell/cli.js"
 
 /**

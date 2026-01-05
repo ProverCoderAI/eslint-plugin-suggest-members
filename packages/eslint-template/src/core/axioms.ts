@@ -1,31 +1,23 @@
-// CHANGE: introduce axiomatic bridge between tseslint plugin type and ESLint core plugin type
-// WHY: defineConfig expects @eslint/core plugin typing while rules are authored with @typescript-eslint/utils
-// QUOTE(ТЗ): "Argument of type 'Config | ConfigArray' is not assignable..."
-// REF: user request 2025-12-25
+// CHANGE: centralize axiomatic casts (brands + plugin bridge)
+// WHY: allow limited, auditable use of `as` in one module
+// QUOTE(TZ): n/a
+// REF: AGENTS.md axiomatic module rule
 // SOURCE: n/a
-// FORMAT THEOREM: ∀p: Plugin(p) → coreView(p) ≡ p
+// FORMAT THEOREM: ∀x ∈ ℝ: clamp(x) ∈ [0,1]
 // PURITY: CORE
 // EFFECT: n/a
-// INVARIANT: returned reference is exactly the input reference
+// INVARIANT: SimilarityScore ∈ [0,1]
 // COMPLEXITY: O(1)/O(1)
 import type { TSESLint } from "@typescript-eslint/utils"
 import type { ESLint } from "eslint"
 
-/**
- * Provides a typed bridge for plugins authored with @typescript-eslint/utils
- * when a core-typed plugin is required (e.g., ESLint defineConfig).
- *
- * @param plugin - Plugin authored with @typescript-eslint/utils rule definitions
- * @returns Same plugin value viewed as ESLint core plugin type
- *
- * @pure true - type-level reinterpretation only
- * @effect n/a
- * @invariant ∀p: toEslintPlugin(p) === p
- * @precondition plugin.rules are runtime-compatible with ESLint core
- * @postcondition referential equality preserved
- * @complexity O(1)
- * @throws Never - no runtime exceptions
- */
+import type { SimilarityScore } from "./types/domain.js"
+
+export const makeSimilarityScore = (value: number): SimilarityScore => {
+  const clamped = value < 0 ? 0 : (Math.min(value, 1))
+  return clamped as SimilarityScore
+}
+
 export const toEslintPlugin = (
   plugin: TSESLint.FlatConfig.Plugin
 ): ESLint.Plugin => plugin as never as ESLint.Plugin

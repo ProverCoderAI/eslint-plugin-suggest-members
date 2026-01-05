@@ -63,6 +63,9 @@ importers:
       '@biomejs/biome':
         specifier: ^2.3.10
         version: 2.3.10
+      '@effect-template/eslint-template':
+        specifier: workspace:*
+        version: link:../eslint-template
       '@effect/eslint-plugin':
         specifier: ^0.3.2
         version: 0.3.2
@@ -111,9 +114,6 @@ importers:
       eslint-plugin-codegen:
         specifier: 0.34.1
         version: 0.34.1(eslint@9.39.2(jiti@2.6.1))
-      eslint-template:
-        specifier: workspace:*
-        version: link:../eslint-template
       eslint-plugin-import:
         specifier: ^2.32.0
         version: 2.32.0(@typescript-eslint/parser@8.50.1(eslint@9.39.2(jiti@2.6.1))(typescript@5.9.3))(eslint-import-resolver-typescript@4.4.4)(eslint@9.39.2(jiti@2.6.1))

@@ -14,9 +14,11 @@ export type GreetingVariant =
  * @invariant variant.kind === "named" ⇒ variant.name.length > 0
  * @complexity O(1) time / O(1) space
  */
-export const formatGreeting = (variant: GreetingVariant): string =>
+const formatGreeting = (variant: GreetingVariant): string =>
   Match.value(variant).pipe(
     Match.when({ kind: "effect" }, () => "Hello from Effect!"),
     Match.when({ kind: "named" }, ({ name }) => `Hello, ${name}!`),
     Match.exhaustive
   )
+
+export { formatGree1ting }
