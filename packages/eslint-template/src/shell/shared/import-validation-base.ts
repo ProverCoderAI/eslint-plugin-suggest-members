@@ -14,7 +14,8 @@ import type { Layer } from "effect"
 import { Effect, Exit } from "effect"
 
 import type { TypeScriptServiceError } from "../effects/errors.js"
-import type { FilesystemService } from "../services/filesystem.js"
+import type { FilesystemError } from "../effects/errors.js"
+import type { FilesystemServiceTag } from "../services/filesystem.js"
 import type { TypeScriptCompilerServiceTag } from "../services/typescript-compiler.js"
 import { makeTypeScriptCompilerServiceLayer } from "../services/typescript-compiler.js"
 import { isValidImportIdentifier, tryValidationWithFallback } from "./validation-helpers.js"
@@ -34,12 +35,10 @@ export interface ImportValidationConfig<TResult> {
     containingFilePath: string
   ) => Effect.Effect<TResult, TypeScriptServiceError, TypeScriptCompilerServiceTag>
   readonly fallbackValidationEffect?: (
-    filesystemService: FilesystemService
-  ) => (
     importName: string,
     modulePath: string,
     contextFilePath: string
-  ) => Effect.Effect<TResult>
+  ) => Effect.Effect<TResult, FilesystemError, FilesystemServiceTag>
   readonly formatMessage: (result: TResult) => string
   readonly messageId: string
   readonly skipWhenTypeScriptAvailable?: boolean

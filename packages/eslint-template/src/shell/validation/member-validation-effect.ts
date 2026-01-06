@@ -59,12 +59,16 @@ const collectUnionPropertiesEffect = (
       return yield* _(tsService.getPropertiesOfType(objectType))
     }
 
+    const emptySymbols: ReadonlyArray<ts.Symbol> = []
     const properties: Array<ts.Symbol> = []
     for (const part of objectType.types) {
       const partProps = yield* _(
         pipe(
           tsService.getPropertiesOfType(part),
-          Effect.catchAll(() => Effect.sync((): ReadonlyArray<ts.Symbol> => []))
+          Effect.matchEffect({
+            onFailure: () => Effect.succeed(emptySymbols),
+            onSuccess: (value) => Effect.succeed(value)
+          })
         )
       )
       for (const prop of partProps) {
@@ -84,7 +88,10 @@ const collectPropertyMetadataForType = (
     const typeName = yield* _(
       pipe(
         tsService.getTypeName(objectType, tsNode),
-        Effect.catchAll(() => Effect.sync((): string | undefined => undefined))
+        Effect.matchEffect({
+          onFailure: () => Effect.succeed(undefined),
+          onSuccess: (value) => Effect.succeed(value)
+        })
       )
     )
     const properties = yield* _(collectUnionPropertiesEffect(objectType, tsService))

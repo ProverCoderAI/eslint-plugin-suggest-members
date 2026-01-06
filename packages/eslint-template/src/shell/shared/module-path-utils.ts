@@ -7,8 +7,6 @@
 // EFFECT: n/a
 // INVARIANT: normalized paths use posix separators
 // COMPLEXITY: O(n)/O(1)
-import path from "node:path"
-
 import { SUPPORTED_EXTENSIONS } from "../../core/validation/candidates.js"
 
 export const MODULE_FILE_EXTENSIONS = SUPPORTED_EXTENSIONS
@@ -23,10 +21,11 @@ export const stripKnownExtension = (filePath: string): string => {
 }
 
 export const normalizeModuleSpecifier = (
+  relativePath: (from: string, to: string) => string,
   fromDir: string,
   absoluteWithoutExtension: string
 ): string => {
-  const relative = path.relative(fromDir, absoluteWithoutExtension).replaceAll("\\", "/")
+  const relative = relativePath(fromDir, absoluteWithoutExtension).replaceAll("\\", "/")
   if (relative.startsWith("./") || relative.startsWith("../")) {
     return relative
   }

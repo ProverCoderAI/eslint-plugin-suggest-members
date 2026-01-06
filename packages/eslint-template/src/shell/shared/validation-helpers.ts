@@ -10,11 +10,11 @@
 import type { TSESTree } from "@typescript-eslint/utils"
 import { AST_NODE_TYPES } from "@typescript-eslint/utils"
 import type { RuleContext } from "@typescript-eslint/utils/ts-eslint"
-import type { Effect } from "effect"
+import { Effect } from "effect"
 
 import { shouldSkipIdentifier } from "../../core/validators/index.js"
 import type { TypeScriptServiceError } from "../effects/errors.js"
-import { makeFilesystemService } from "../services/filesystem.js"
+import { makeFilesystemServiceLayer } from "../services/filesystem.js"
 import type { ImportValidationConfig } from "./import-validation-base.js"
 import { runEffect } from "./validation-runner.js"
 
@@ -56,14 +56,15 @@ const tryFallbackValidationOnly = <TResult>(
 
   if (!config.fallbackValidationEffect) return
 
-  const filesystemService = makeFilesystemService()
-  const fallbackEffect = config.fallbackValidationEffect(filesystemService)(
+  const fallbackEffect = config.fallbackValidationEffect(
     importName,
     modulePath,
     context.filename || ""
   )
 
-  const result = runEffect(fallbackEffect)
+  const result = runEffect(
+    Effect.provide(fallbackEffect, makeFilesystemServiceLayer())
+  )
   if (!result) return
 
   reportValidationResult(imported, config, context, result)

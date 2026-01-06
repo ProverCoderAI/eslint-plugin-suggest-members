@@ -8,7 +8,6 @@
 // INVARIANT: Valid | ModuleNotFound
 // COMPLEXITY: O(n log n)/O(n)
 import { Effect, Match, pipe } from "effect"
-import path from "node:path"
 
 import * as S from "@effect/schema/Schema"
 
@@ -24,6 +23,7 @@ import {
 } from "../../core/index.js"
 import type { FilesystemError } from "../effects/errors.js"
 import { makeReadError } from "../effects/errors.js"
+import type { FilesystemService } from "../services/filesystem.js"
 import { FilesystemServiceTag } from "../services/filesystem.js"
 import { isNodeBuiltinModule } from "../services/node-builtin-exports.js"
 import { MODULE_FILE_EXTENSIONS, normalizeModuleSpecifier, stripKnownExtension } from "../shared/module-path-utils.js"
@@ -50,33 +50,32 @@ const checkPathWithExtensions = (
 ): Effect.Effect<boolean, FilesystemError> => checkFileExistsWithExtensions(fsService, (ext) => basePath + ext)
 
 const checkIndexFiles = (
-  fsService: {
-    fileExists: (value: string) => Effect.Effect<boolean, FilesystemError>
-  },
+  fsService: Pick<FilesystemService, "fileExists" | "joinPath">,
   dirPath: string
 ): Effect.Effect<boolean, FilesystemError> =>
-  checkFileExistsWithExtensions(fsService, (ext) => path.join(dirPath, `index${ext}`))
+  checkFileExistsWithExtensions(fsService, (ext) => fsService.joinPath(dirPath, `index${ext}`))
 
 const generateModuleSuggestions = (
-  fsService: {
-    readDirectory: (value: string) => Effect.Effect<ReadonlyArray<string>, FilesystemError>
-  },
+  fsService: Pick<
+    FilesystemService,
+    "readDirectory" | "dirname" | "joinPath" | "relativePath"
+  >,
   resolvedPath: string,
   requestedPath: string,
   containingFile: string
 ): Effect.Effect<ReadonlyArray<SuggestionWithScore>, FilesystemError> =>
   Effect.gen(function*(_) {
-    const targetDirectory = path.dirname(resolvedPath)
-    const containingDir = path.dirname(containingFile)
+    const targetDirectory = fsService.dirname(resolvedPath)
+    const containingDir = fsService.dirname(containingFile)
     const normalizedRequested = requestedPath.replaceAll("\\", "/")
     const files = yield* _(fsService.readDirectory(targetDirectory))
 
     const moduleNames = files
       .filter((file) => /\.(ts|tsx|js|jsx|json)$/.test(file))
       .map((file) => {
-        const absoluteCandidate = path.join(targetDirectory, file)
+        const absoluteCandidate = fsService.joinPath(targetDirectory, file)
         const withoutExtension = stripKnownExtension(absoluteCandidate)
-        return normalizeModuleSpecifier(containingDir, withoutExtension)
+        return normalizeModuleSpecifier(fsService.relativePath, containingDir, withoutExtension)
       })
 
     const uniqueCandidates = [...new Set(moduleNames)]
@@ -150,33 +149,28 @@ const parsePackageJsonEffect = (
   })
 
 const findNearestPackageJsonEffect = (
-  fsService: {
-    fileExists: (value: string) => Effect.Effect<boolean, FilesystemError>
-  },
+  fsService: Pick<FilesystemService, "fileExists" | "dirname" | "joinPath">,
   containingFile: string
 ): Effect.Effect<string | undefined, FilesystemError> =>
   Effect.gen(function*(_) {
-    let currentDir = path.dirname(containingFile)
-    let parentDir = path.dirname(currentDir)
+    let currentDir = fsService.dirname(containingFile)
+    let parentDir = fsService.dirname(currentDir)
     let found: string | undefined
 
     while (currentDir !== parentDir && found === undefined) {
-      const candidate = path.join(currentDir, "package.json")
+      const candidate = fsService.joinPath(currentDir, "package.json")
       const exists = yield* _(fsService.fileExists(candidate))
       if (exists) {
         found = candidate
       } else {
         currentDir = parentDir
-        parentDir = path.dirname(currentDir)
+        parentDir = fsService.dirname(currentDir)
       }
     }
     return found
   })
 
-interface PackageFsService {
-  readonly fileExists: (value: string) => Effect.Effect<boolean, FilesystemError>
-  readonly readFile: (value: string) => Effect.Effect<string, FilesystemError>
-}
+type PackageFsService = Pick<FilesystemService, "fileExists" | "readFile" | "dirname" | "joinPath">
 
 const getPackageCandidatesEffect = (
   fsService: PackageFsService,
@@ -215,11 +209,10 @@ const validatePackageModulePathEffect = (
   })
 
 const validateRelativeModulePathEffect = (
-  fsService: {
-    fileExists: (value: string) => Effect.Effect<boolean, FilesystemError>
-    readDirectory: (value: string) => Effect.Effect<ReadonlyArray<string>, FilesystemError>
-    resolveRelativePath: (fromPath: string, modulePath: string) => Effect.Effect<string, FilesystemError>
-  },
+  fsService: Pick<
+    FilesystemService,
+    "fileExists" | "readDirectory" | "resolveRelativePath" | "joinPath" | "dirname" | "relativePath"
+  >,
   node: object,
   requestedPath: string,
   containingFile: string

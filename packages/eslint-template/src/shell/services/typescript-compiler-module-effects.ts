@@ -122,7 +122,10 @@ const createModuleLookupEffect = <T, TParams extends ModuleLookupParams>(
         params.containingFilePath
       ),
       Effect.flatMap(({ contextFile, moduleSymbol }) => build(checker, moduleSymbol, contextFile, params)),
-      Effect.catchAll(() => Effect.sync((): T | undefined => undefined))
+      Effect.matchEffect({
+        onFailure: () => Effect.succeed(undefined),
+        onSuccess: (value) => Effect.succeed(value)
+      })
     )
 }
 

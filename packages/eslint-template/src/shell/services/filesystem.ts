@@ -7,9 +7,11 @@
 // EFFECT: Effect<Success, FilesystemError>
 // INVARIANT: errors are typed
 // COMPLEXITY: O(1)/O(n)
-import { Context, Effect, Layer } from "effect"
-import * as fs from "node:fs"
-import path from "node:path"
+import * as FileSystem from "@effect/platform/FileSystem"
+import * as Path from "@effect/platform/Path"
+import * as NodeFileSystem from "@effect/platform-node/NodeFileSystem"
+import * as NodePath from "@effect/platform-node/NodePath"
+import { Context, Effect, Layer, pipe } from "effect"
 
 import type { FilesystemError } from "../effects/errors.js"
 import {
@@ -29,6 +31,9 @@ export interface FilesystemService {
     fromPath: string,
     modulePath: string
   ) => Effect.Effect<string, FilesystemError>
+  readonly joinPath: (...segments: ReadonlyArray<string>) => string
+  readonly dirname: (value: string) => string
+  readonly relativePath: (from: string, to: string) => string
 }
 
 export class FilesystemServiceTag extends Context.Tag("FilesystemService")<
@@ -36,73 +41,62 @@ export class FilesystemServiceTag extends Context.Tag("FilesystemService")<
   FilesystemService
 >() {}
 
+const errorMessage = (error: unknown): string =>
+  error instanceof Error ? error.message : String(error)
+
 const createFileExistsEffect = (
-  filePath: string
-): Effect.Effect<boolean, FilesystemError> =>
-  Effect.try({
-    try: () => fs.existsSync(filePath),
-    catch: (error) =>
-      makeReadError(
-        filePath,
-        error instanceof Error ? error.message : "file-exists-error"
-      )
-  })
+  fsService: FileSystem.FileSystem
+) =>
+(filePath: string): Effect.Effect<boolean, FilesystemError> =>
+  pipe(
+    fsService.exists(filePath),
+    Effect.mapError((error) => makeReadError(filePath, errorMessage(error)))
+  )
 
 const createReadDirectoryEffect = (
-  dirPath: string
-): Effect.Effect<ReadonlyArray<string>, FilesystemError> =>
-  Effect.try({
-    try: () => {
-      if (!fs.existsSync(dirPath)) {
-        throw new Error("DirectoryNotFound")
-      }
-      return fs.readdirSync(dirPath)
-    },
-    catch: (error) => {
-      if (error instanceof Error && error.message === "DirectoryNotFound") {
-        return makeDirectoryNotFoundError(dirPath)
-      }
-      return makeReadError(
-        dirPath,
-        error instanceof Error ? error.message : "read-dir-error"
-      )
-    }
-  })
+  fsService: FileSystem.FileSystem
+) =>
+(dirPath: string): Effect.Effect<ReadonlyArray<string>, FilesystemError> =>
+  pipe(
+    fsService.exists(dirPath),
+    Effect.mapError((error) => makeReadError(dirPath, errorMessage(error))),
+    Effect.flatMap((exists) =>
+      exists
+        ? pipe(
+          fsService.readDirectory(dirPath),
+          Effect.mapError((error) => makeReadError(dirPath, errorMessage(error)))
+        )
+        : Effect.fail(makeDirectoryNotFoundError(dirPath))
+    )
+  )
 
 const createReadFileEffect = (
-  filePath: string
-): Effect.Effect<string, FilesystemError> =>
-  Effect.try({
-    try: () => {
-      if (!fs.existsSync(filePath)) {
-        throw new Error("FileNotFound")
-      }
-      return fs.readFileSync(filePath, "utf8")
-    },
-    catch: (error) => {
-      if (error instanceof Error && error.message === "FileNotFound") {
-        return makeFileNotFoundError(filePath)
-      }
-      return makeReadError(
-        filePath,
-        error instanceof Error ? error.message : "read-file-error"
-      )
-    }
-  })
+  fsService: FileSystem.FileSystem
+) =>
+(filePath: string): Effect.Effect<string, FilesystemError> =>
+  pipe(
+    fsService.exists(filePath),
+    Effect.mapError((error) => makeReadError(filePath, errorMessage(error))),
+    Effect.flatMap((exists) =>
+      exists
+        ? pipe(
+          fsService.readFileString(filePath, "utf8"),
+          Effect.mapError((error) => makeReadError(filePath, errorMessage(error)))
+        )
+        : Effect.fail(makeFileNotFoundError(filePath))
+    )
+  )
 
 const createResolveRelativePathEffect = (
-  fromPath: string,
-  modulePath: string
-): Effect.Effect<string, FilesystemError> =>
+  pathService: Path.Path
+) =>
+(fromPath: string, modulePath: string): Effect.Effect<string, FilesystemError> =>
   Effect.try({
     try: () => {
       if (modulePath.startsWith("./") || modulePath.startsWith("../")) {
-        return path.resolve(path.dirname(fromPath), modulePath)
+        return pathService.resolve(pathService.dirname(fromPath), modulePath)
       }
-      if (modulePath.startsWith("/")) {
-        return modulePath
-      }
-      if (modulePath.startsWith("node:")) {
+      if (modulePath.startsWith("/") || modulePath.startsWith("node:")) {
         return modulePath
       }
       return modulePath
@@ -114,12 +108,29 @@ const createResolveRelativePathEffect = (
       )
   })
 
-export const makeFilesystemService = (): FilesystemService => ({
-  fileExists: createFileExistsEffect,
-  readDirectory: createReadDirectoryEffect,
-  readFile: createReadFileEffect,
-  resolveRelativePath: createResolveRelativePathEffect
+const makeFilesystemService = (
+  fsService: FileSystem.FileSystem,
+  pathService: Path.Path
+): FilesystemService => ({
+  fileExists: createFileExistsEffect(fsService),
+  readDirectory: createReadDirectoryEffect(fsService),
+  readFile: createReadFileEffect(fsService),
+  resolveRelativePath: createResolveRelativePathEffect(pathService),
+  joinPath: (...segments) => pathService.join(...segments),
+  dirname: (value) => pathService.dirname(value),
+  relativePath: (from, to) => pathService.relative(from, to)
 })
 
 export const makeFilesystemServiceLayer = (): Layer.Layer<FilesystemServiceTag> =>
-  Layer.succeed(FilesystemServiceTag, makeFilesystemService())
+  pipe(
+    Layer.effect(
+      FilesystemServiceTag,
+      Effect.gen(function*(_) {
+        const fsService = yield* _(FileSystem.FileSystem)
+        const pathService = yield* _(Path.Path)
+        return makeFilesystemService(fsService, pathService)
+      })
+    ),
+    Layer.provideMerge(NodeFileSystem.layer),
+    Layer.provideMerge(NodePath.layer)
+  )

@@ -81,7 +81,10 @@ const resolveModuleTypeNameEffect = (
 ): Effect.Effect<string | undefined, TypeScriptServiceError> =>
   pipe(
     tsService.getModuleTypeName(modulePath, containingFilePath),
-    Effect.catchAll(() => Effect.sync((): string | undefined => undefined))
+    Effect.matchEffect({
+      onFailure: () => Effect.succeed(undefined),
+      onSuccess: (value) => Effect.succeed(value)
+    })
   )
 
 const createInvalidParams = <TResult>(
