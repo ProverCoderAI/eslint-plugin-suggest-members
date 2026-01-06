@@ -3,6 +3,15 @@ import { createRuleTester, resolveFixturePath } from "../utils/rule-tester.js"
 
 const ruleTester = createRuleTester()
 const filename = resolveFixturePath("consumer.ts")
+const memberAccessMessage =
+  "Property 'nmae' does not exist on type '{ name: string; count: number; }'. Did you mean:\n" +
+  "  - name: string"
+const memberOptionalAccessMessage = "Property 'nmae' does not exist on type '{ name: string; }'. Did you mean:\n" +
+  "  - name: string"
+const memberPatternMessage = "Property 'na1me' does not exist on type 'Named'. Did you mean:\n" +
+  "  - name: string"
+const memberLiteralMessage = "Property 'kin1d' does not exist on type 'Named'. Did you mean:\n" +
+  "  - kind: \"named\""
 
 ruleTester.run("suggest-members", suggestMembersRule, {
   valid: [
@@ -36,7 +45,25 @@ ruleTester.run("suggest-members", suggestMembersRule, {
         const obj = { name: "ok", count: 1 }
         obj.nmae
       `,
-      errors: [{ messageId: "suggestMembers" }]
+      errors: [{
+        messageId: "suggestMembers",
+        data: {
+          message: memberAccessMessage
+        }
+      }]
+    },
+    {
+      filename,
+      code: `
+        const obj = { name: "ok" }
+        obj?.nmae
+      `,
+      errors: [{
+        messageId: "suggestMembers",
+        data: {
+          message: memberOptionalAccessMessage
+        }
+      }]
     },
     {
       filename,
@@ -46,7 +73,12 @@ ruleTester.run("suggest-members", suggestMembersRule, {
         const { na1me } = variant
         void na1me
       `,
-      errors: [{ messageId: "suggestMembers" }]
+      errors: [{
+        messageId: "suggestMembers",
+        data: {
+          message: memberPatternMessage
+        }
+      }]
     },
     {
       filename,
@@ -55,7 +87,12 @@ ruleTester.run("suggest-members", suggestMembersRule, {
         const variant: Named = { kin1d: "named", name: "ok" }
         void variant
       `,
-      errors: [{ messageId: "suggestMembers" }]
+      errors: [{
+        messageId: "suggestMembers",
+        data: {
+          message: memberLiteralMessage
+        }
+      }]
     }
   ]
 })

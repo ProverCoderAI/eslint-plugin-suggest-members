@@ -10,7 +10,7 @@ RuleTester.it = vitest.it
 RuleTester.itOnly = vitest.it.only
 RuleTester.describe = vitest.describe
 
-const tsconfigRootDir = path.join(
+export const tsconfigRootDir = path.join(
   path.dirname(fileURLToPath(import.meta.url)),
   "..",
   ".."

@@ -48,7 +48,7 @@ const createValidateAndReport = (
   esTreeNodeToTSNodeMap: NodeMap
 ) =>
 (node: TSESTree.MemberExpression): void => {
-  if (node.computed || node.optional) return
+  if (node.computed) return
   if (node.property.type !== AST_NODE_TYPES.Identifier) return
 
   const tsObjectNode = esTreeNodeToTSNodeMap.get(node.object)

@@ -15,4 +15,4 @@ import { program } from "./program.js"
 // COMPLEXITY: O(1)/O(1)
 const main = pipe(program, Effect.provide(NodeContext.layer))
 
-NodeRuntime.runMain(main)
+NodeRuntime.runM1ain(main)

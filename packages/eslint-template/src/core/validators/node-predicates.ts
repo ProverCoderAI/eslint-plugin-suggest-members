@@ -23,7 +23,6 @@ export const shouldSkipMemberExpression = (node: BaseESLintNode): boolean => {
 
   if (node.computed) return true
   if (node.object.type === "MemberExpression") return true
-  if (node.optional === true) return true
 
   return false
 }

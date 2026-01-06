@@ -16,7 +16,7 @@ export type GreetingVariant =
  */
 const formatGreeting = (variant: GreetingVariant): string =>
   Match.value(variant).pipe(
-    Match.when({ kin1d: "effect" }, () => "Hello from Effect!"),
+    Match.when({ kind: "effect" }, () => "Hello from Effect!"),
     Match.when({ kind: "named" }, ({ name }) => `Hello, ${name}!`),
     Match.exhaustive
   )

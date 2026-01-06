@@ -3,6 +3,9 @@ import { createRuleTester, resolveFixturePath } from "../utils/rule-tester.js"
 
 const ruleTester = createRuleTester()
 const filename = resolveFixturePath("consumer.ts")
+const missingNameMessage = "Cannot find name 'formatGreeting'. Did you mean:\n" +
+  "  - formatGree1ting(name: string): string\n" +
+  "  - FormData: typeof undici.FormData"
 
 ruleTester.run("suggest-missing-names", suggestMissingNamesRule, {
   valid: [
@@ -21,7 +24,12 @@ ruleTester.run("suggest-missing-names", suggestMissingNamesRule, {
         const formatGree1ting = (name: string) => name
         formatGreeting("ok")
       `,
-      errors: [{ messageId: "suggestMissingNames" }]
+      errors: [{
+        messageId: "suggestMissingNames",
+        data: {
+          message: missingNameMessage
+        }
+      }]
     }
   ]
 })
