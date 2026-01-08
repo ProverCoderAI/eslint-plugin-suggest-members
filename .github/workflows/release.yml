@@ -61,6 +61,18 @@ jobs:
           git add -A
           git commit -m "chore(release): version packages"
           git push
+      - name: Configure npm auth
+        if: github.actor != 'github-actions[bot]'
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [ -z "${NPM_TOKEN:-}" ]; then
+            echo "NPM_TOKEN is not set"
+            exit 1
+          fi
+          printf '%s\n' "//registry.npmjs.org/:_authToken=${NPM_TOKEN}" > "$HOME/.npmrc"
+        env:
+          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
       - name: Publish
         run: pnpm changeset-publish
         env:
