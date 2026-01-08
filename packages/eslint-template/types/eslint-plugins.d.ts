@@ -13,10 +13,3 @@ declare module "@eslint-community/eslint-plugin-eslint-comments/configs" {
 	};
 	export default configs;
 }
-
-declare module "@prover-coder-ai/eslint-plugin-suggest-members-aliased" {
-	import type plugin from "../src/index.js";
-
-	const exported: typeof plugin;
-	export default exported;
-}
