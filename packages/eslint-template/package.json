@@ -27,7 +27,6 @@
     "@eslint/compat": "2.0.0",
     "@eslint/eslintrc": "3.3.3",
     "@eslint/js": "9.39.2",
-    "@ton-ai-core/eslint-plugin-suggest-members": "^1.6.17",
     "@ton-ai-core/vibecode-linter": "^1.0.6",
     "@types/node": "^25.0.3",
     "@typescript-eslint/eslint-plugin": "^8.50.1",
