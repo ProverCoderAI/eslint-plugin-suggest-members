@@ -11,7 +11,7 @@
     "build": "pnpm --filter @effect-template/eslint-template build",
     "check": "pnpm --filter @effect-template/eslint-template check",
     "changeset": "changeset",
-    "changeset-publish": "node -e \"if (!process.env.NPM_TOKEN) { console.log('Skipping publish: NPM_TOKEN is not set'); process.exit(0); }\" && changeset publish",
+    "changeset-publish": "if [ -z \"$NPM_TOKEN\" ]; then echo \"Skipping publish: NPM_TOKEN is not set\"; exit 0; fi; changeset publish",
     "changeset-version": "changeset version",
     "lint": "pnpm --filter @effect-template/eslint-template lint",
     "lint:tests": "pnpm --filter @effect-template/app lint:tests",
