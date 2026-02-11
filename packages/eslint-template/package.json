@@ -17,8 +17,8 @@
     "@eslint-community/eslint-plugin-eslint-comments": "^4.6.0",
     "@eslint/compat": "2.0.2",
     "@eslint/eslintrc": "3.3.3",
-    "@eslint/js": "9.39.2",
-    "@prover-coder-ai/eslint-plugin-suggest-members-aliased": "npm:@prover-coder-ai/eslint-plugin-suggest-members@0.0.20",
+    "@eslint/js": "10.0.1",
+    "@prover-coder-ai/eslint-plugin-suggest-members-aliased": "npm:@prover-coder-ai/eslint-plugin-suggest-members@0.0.23",
     "@ton-ai-core/vibecode-linter": "^1.0.11",
     "@types/node": "^25.2.3",
     "@typescript-eslint/eslint-plugin": "^8.55.0",
@@ -31,7 +31,7 @@
     "eslint-plugin-eslint-plugin": "^7.3.0",
     "eslint-plugin-import": "^2.32.0",
     "eslint-plugin-simple-import-sort": "^12.1.1",
-    "eslint-plugin-sonarjs": "^3.0.6",
+    "eslint-plugin-sonarjs": "^3.0.7",
     "eslint-plugin-sort-destructure-keys": "^2.0.0",
     "eslint-plugin-unicorn": "^63.0.0",
     "@vitest/eslint-plugin": "^1.6.7",
@@ -44,7 +44,7 @@
     "vitest": "^4.0.18"
   },
   "peerDependencies": {
-    "eslint": "^8.57.0 || ^9.0.0",
+    "eslint": "^8.57.0 || ^9.0.0 || ^10.0.0",
     "typescript": ">=4.8.4 <6.0.0"
   },
   "exports": {
