@@ -10,6 +10,7 @@
 import * as NodePath from "@effect/platform-node/NodePath"
 import * as Path from "@effect/platform/Path"
 import { Effect, Match, pipe } from "effect"
+import { builtinModules } from "node:module"
 import * as ts from "typescript"
 
 import type { ModulePathValidationResult, SuggestionWithScore } from "../../core/index.js"
@@ -93,6 +94,28 @@ const isPackageSpecifier = (value: string): boolean =>
 
 const fileExistsOnDisk = (filePath: string): boolean => ts.sys.fileExists(filePath)
 
+const normalizeBuiltinName = (value: string): string =>
+  value.startsWith("node:") ? value.slice(5) : value
+
+const nodeBuiltinModuleSet = new Set(
+  builtinModules.map((name) => normalizeBuiltinName(name))
+)
+
+const nodeBuiltinRootSet = new Set(
+  [...nodeBuiltinModuleSet].map((name) => name.split("/")[0] ?? name)
+)
+
+const isNodeBuiltinModuleSpecifier = (requestedPath: string): boolean => {
+  const normalized = normalizeBuiltinName(requestedPath)
+  if (normalized.length === 0) return false
+
+  if (normalized.includes("/")) {
+    return nodeBuiltinModuleSet.has(normalized)
+  }
+
+  return nodeBuiltinRootSet.has(normalized)
+}
+
 // CHANGE: add containingFile parameter and TypeScript resolution fallback
 // WHY: in monorepos, workspace packages may not appear in the package name index.
 //   TypeScript's module resolution can validate these imports as a last resort.
@@ -108,6 +131,7 @@ const validatePackageModulePathWithIndex = (
 ): ModulePathValidationResult => {
   const moduleName = extractModuleName(requestedPath)
   if (moduleName.length === 0) return makeValidModuleResult()
+  if (isNodeBuiltinModuleSpecifier(requestedPath)) return makeValidModuleResult()
   if (index.packageNameSet.has(moduleName)) return makeValidModuleResult()
 
   // fallback: check if TypeScript can resolve the module

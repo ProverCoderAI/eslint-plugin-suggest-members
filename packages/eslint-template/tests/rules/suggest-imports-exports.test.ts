@@ -50,6 +50,16 @@ const validExportLocalCode = `
   export { formatGreeting }
 `
 
+const validExportImportedValueCode = `
+  import { useState } from "./modules/exports"
+  export { useState }
+`
+
+const validExportImportedTypeCode = `
+  import type { MembershipView, ProfileView } from "./modules/profile-types"
+  export type { MembershipView, ProfileView }
+`
+
 const invalidExportModuleCode = `
   export { useStae } from "./modules/exports"
 `
@@ -74,6 +84,14 @@ ruleTester.run("suggest-exports", suggestExportsRule, {
     {
       filename,
       code: validExportLocalCode
+    },
+    {
+      filename,
+      code: validExportImportedValueCode
+    },
+    {
+      filename,
+      code: validExportImportedTypeCode
     }
   ],
   invalid: [

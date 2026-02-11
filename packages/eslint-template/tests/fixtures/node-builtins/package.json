@@ -1,0 +1,9 @@
+{
+  "name": "node-builtins-fixture",
+  "private": true,
+  "type": "module",
+  "dependencies": {
+    "passport": "0.0.0",
+    "bcrypt": "0.0.0"
+  }
+}
