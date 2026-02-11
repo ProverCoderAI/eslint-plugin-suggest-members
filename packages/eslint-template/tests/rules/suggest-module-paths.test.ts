@@ -3,6 +3,7 @@ import { createRuleTester, resolveFixturePath } from "../utils/rule-tester.js"
 
 const ruleTester = createRuleTester()
 const filename = resolveFixturePath("consumer.ts")
+const monorepoFilename = resolveFixturePath("monorepo/packages/consumer/src/index.ts")
 const localModulePathMessage = "Cannot find module \"./module-paths/alhpa\". Did you mean:\n" +
   "  - ./module-paths/alpha\n" +
   "  - ./module-paths/beta"
@@ -17,6 +18,27 @@ ruleTester.run("suggest-module-paths", suggestModulePathsRule, {
       code: `
         import { alpha } from "./module-paths/alpha"
         alpha
+      `
+    },
+    // monorepo: importing an existing dependency should not produce a false positive
+    {
+      filename,
+      code: `
+        import { pipe } from "effect"
+        pipe
+      `
+    },
+    {
+      filename,
+      code: `
+        import "./module-paths/admin-invitations.css"
+      `
+    },
+    {
+      filename: monorepoFilename,
+      code: `
+        import { moduleConfig } from "auth-admin/app/lib/auth-config"
+        void moduleConfig
       `
     }
   ],

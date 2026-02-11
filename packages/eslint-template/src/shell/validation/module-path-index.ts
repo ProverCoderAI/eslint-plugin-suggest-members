@@ -18,6 +18,7 @@ export interface ModulePathIndex {
   readonly localFileSet: ReadonlySet<string>
   readonly packageNames: ReadonlyArray<string>
   readonly packageNameSet: ReadonlySet<string>
+  readonly canResolveModule?: (modulePath: string, containingFile: string) => boolean
 }
 
 const normalizePath = (value: string): string => value.replaceAll("\\", "/")
@@ -94,22 +95,94 @@ const findNearestPackageJson = (startDir: string): string | null => {
   return ts.sys.fileExists(rootCandidate) ? rootCandidate : null
 }
 
-const readPackageNamesFromNearest = (
-  startDir: string
-): ReadonlyArray<string> => {
-  const packageJsonPath = findNearestPackageJson(startDir)
-  if (!packageJsonPath) return []
+// CHANGE: read package.json "name" field for workspace package discovery
+// WHY: monorepo workspace packages need their names collected so cross-package imports are recognized
+// PURITY: SHELL
+// INVARIANT: returns name or null
+// COMPLEXITY: O(1)/O(1)
+const PackageNameSchema = S.Struct({
+  name: S.String
+}).pipe(S.partial)
+
+const decodePackageName = S.decodeUnknownEither(S.parseJson(PackageNameSchema))
+
+const readPackageNameFromPath = (packageJsonPath: string): string | null => {
   const content = ts.sys.readFile(packageJsonPath)
-  if (!content) return []
-  const parsed = parsePackageJson(content)
-  return parsed ? extractPackageNames(parsed) : []
+  if (!content) return null
+  return Either.match(decodePackageName(content), {
+    onLeft: () => null,
+    onRight: (value) => value.name !== undefined && value.name.length > 0 ? value.name : null
+  })
 }
 
-const moduleIndexCache = new WeakMap<ts.Program, ModulePathIndex>()
+// CHANGE: collect unique package.json directories from source files
+// WHY: in monorepos, program.getCurrentDirectory() returns the workspace root,
+//   missing package-level dependencies. Source files belong to specific packages,
+//   so we find their nearest package.json files for accurate dependency discovery.
+// PURITY: SHELL
+// INVARIANT: each unique package.json is read at most once
+// COMPLEXITY: O(n)/O(n) where n = |sourceFiles|
+const collectPackageJsonPaths = (
+  sourceFileDirs: ReadonlyArray<string>
+): ReadonlyArray<string> => {
+  const seen = new Set<string>()
+  const result: Array<string> = []
 
-export const buildModulePathIndex = (program: ts.Program): ModulePathIndex => {
+  for (const dir of sourceFileDirs) {
+    const found = findNearestPackageJson(dir)
+    if (found && !seen.has(found)) {
+      seen.add(found)
+      result.push(found)
+    }
+  }
+
+  return result
+}
+
+// CHANGE: discover workspace sibling package names
+// WHY: in monorepos, cross-package imports reference sibling packages by name.
+//   These names must be in the index to prevent false-positive "module not found" errors.
+// REF: issue #14 — plugin unable to work with monorepos where one package imports from another
+// PURITY: SHELL
+// INVARIANT: only reads package.json files that exist on disk
+// COMPLEXITY: O(w)/O(w) where w = |workspace packages|
+const discoverWorkspacePackageNames = (
+  packageJsonPaths: ReadonlyArray<string>
+): ReadonlyArray<string> => {
+  const names: Array<string> = []
+  const visitedParents = new Set<string>()
+
+  for (const pkgPath of packageJsonPaths) {
+    const pkgDir = dirname(pkgPath)
+    const parentDir = dirname(pkgDir)
+
+    if (visitedParents.has(parentDir)) continue
+    visitedParents.add(parentDir)
+
+    // use getDirectories to enumerate sibling package directories
+    const subdirs = ts.sys.getDirectories(parentDir)
+    for (const subdir of subdirs) {
+      if (subdir === "node_modules") continue
+      const sibPkgJson = joinPath(parentDir, subdir, "package.json")
+      if (ts.sys.fileExists(sibPkgJson)) {
+        const name = readPackageNameFromPath(sibPkgJson)
+        if (name) names.push(name)
+      }
+    }
+  }
+
+  return names
+}
+
+// CHANGE: collect local source files and their directories from a TypeScript program
+// WHY: extracted from buildModulePathIndex to reduce complexity
+// PURITY: SHELL
+// COMPLEXITY: O(n)/O(n) where n = |sourceFiles|
+const collectSourceFilesAndDirs = (
+  program: ts.Program
+): { localFiles: ReadonlyArray<string>; sourceFileDirs: ReadonlySet<string> } => {
   const localFiles: Array<string> = []
-  const packageNames = new Set<string>()
+  const sourceFileDirs = new Set<string>()
 
   for (const sourceFile of program.getSourceFiles()) {
     if (sourceFile.isDeclarationFile) continue
@@ -119,19 +192,76 @@ export const buildModulePathIndex = (program: ts.Program): ModulePathIndex => {
     if (isSupportedFile(normalized)) {
       localFiles.push(normalized)
     }
+    sourceFileDirs.add(dirname(normalized))
   }
 
-  const packageFromManifest = readPackageNamesFromNearest(program.getCurrentDirectory())
-  for (const name of packageFromManifest) {
+  return { localFiles, sourceFileDirs }
+}
+
+// CHANGE: extract dependency names from all package.json files and workspace siblings
+// WHY: extracted from buildModulePathIndex to reduce complexity
+// PURITY: SHELL
+// COMPLEXITY: O(n)/O(n)
+const collectAllPackageNames = (
+  packageJsonPaths: ReadonlyArray<string>
+): ReadonlyArray<string> => {
+  const packageNames = new Set<string>()
+
+  for (const pkgPath of packageJsonPaths) {
+    const content = ts.sys.readFile(pkgPath)
+    if (!content) continue
+    const parsed = parsePackageJson(content)
+    if (!parsed) continue
+    for (const name of extractPackageNames(parsed)) {
+      packageNames.add(name)
+    }
+  }
+
+  for (const name of discoverWorkspacePackageNames(packageJsonPaths)) {
     packageNames.add(name)
   }
+
+  return [...packageNames]
+}
+
+// CHANGE: create a TypeScript module resolution fallback function
+// WHY: even if package name discovery misses a workspace package,
+//   TypeScript's own resolution can validate the import as a last resort
+// PURITY: SHELL
+// COMPLEXITY: O(1)/O(1)
+const createModuleResolver = (
+  program: ts.Program
+): (modulePath: string, containingFile: string) => boolean => {
+  const compilerOptions = program.getCompilerOptions()
+  return (modulePath: string, containingFile: string): boolean => {
+    const resolved = ts.resolveModuleName(modulePath, containingFile, compilerOptions, ts.sys)
+    return resolved.resolvedModule !== undefined
+  }
+}
+
+const moduleIndexCache = new WeakMap<ts.Program, ModulePathIndex>()
+
+// CHANGE: collect dependencies from all package.json files near source files, not just program root
+// WHY: in monorepos, program.getCurrentDirectory() returns workspace root which has minimal deps.
+//   Each package has its own package.json with the actual dependencies used by that package.
+// REF: issue #14 — monorepo cross-package imports not recognized
+// PURITY: SHELL
+// INVARIANT: index contains deps from all relevant package.json files + workspace package names
+// COMPLEXITY: O(n)/O(n)
+export const buildModulePathIndex = (program: ts.Program): ModulePathIndex => {
+  const { localFiles, sourceFileDirs } = collectSourceFilesAndDirs(program)
+
+  const startDirs = [...sourceFileDirs, normalizePath(program.getCurrentDirectory())]
+  const packageJsonPaths = collectPackageJsonPaths(startDirs)
+  const packageNames = collectAllPackageNames(packageJsonPaths)
 
   const uniqueFiles = [...new Set(localFiles)]
   return {
     localFiles: uniqueFiles,
     localFileSet: new Set(uniqueFiles),
-    packageNames: [...packageNames],
-    packageNameSet: new Set(packageNames)
+    packageNames,
+    packageNameSet: new Set(packageNames),
+    canResolveModule: createModuleResolver(program)
   }
 }
 

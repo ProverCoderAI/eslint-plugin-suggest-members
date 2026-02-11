@@ -10,6 +10,7 @@
 import * as NodePath from "@effect/platform-node/NodePath"
 import * as Path from "@effect/platform/Path"
 import { Effect, Match, pipe } from "effect"
+import * as ts from "typescript"
 
 import type { ModulePathValidationResult, SuggestionWithScore } from "../../core/index.js"
 import {
@@ -90,14 +91,29 @@ const isNodeProtocolSpecifier = (value: string): boolean => value.startsWith("no
 const isPackageSpecifier = (value: string): boolean =>
   !isRelativeModuleSpecifier(value) && !isNodeProtocolSpecifier(value)
 
+const fileExistsOnDisk = (filePath: string): boolean => ts.sys.fileExists(filePath)
+
+// CHANGE: add containingFile parameter and TypeScript resolution fallback
+// WHY: in monorepos, workspace packages may not appear in the package name index.
+//   TypeScript's module resolution can validate these imports as a last resort.
+// REF: issue #14 — monorepo cross-package imports produce false-positive errors
+// PURITY: SHELL
+// INVARIANT: Valid when package is in index OR resolvable by TypeScript
+// COMPLEXITY: O(n log n)/O(n)
 const validatePackageModulePathWithIndex = (
   index: ModulePathIndex,
   requestedPath: string,
-  node: object
+  node: object,
+  containingFile: string
 ): ModulePathValidationResult => {
   const moduleName = extractModuleName(requestedPath)
   if (moduleName.length === 0) return makeValidModuleResult()
   if (index.packageNameSet.has(moduleName)) return makeValidModuleResult()
+
+  // fallback: check if TypeScript can resolve the module
+  if (index.canResolveModule?.(requestedPath, containingFile)) {
+    return makeValidModuleResult()
+  }
 
   const validCandidates = index.packageNames.filter((candidate) => isValidCandidate(candidate, moduleName))
   const suggestions = findSimilarCandidates(moduleName, validCandidates)
@@ -117,6 +133,18 @@ const validateRelativeModulePathWithIndex = (
 ): ModulePathValidationResult => {
   const resolvedPath = resolveRelativePath(containingFile, requestedPath)
   const resolvedWithoutExtension = stripKnownExtension(resolvedPath)
+
+  // CHANGE: accept existing on-disk imports even if TS program index excludes file type
+  // WHY: style/assets imports (e.g. .css) are usually not part of Program.getSourceFiles()
+  //   but should not be reported as missing when file exists.
+  // QUOTE(TZ): "должно не падать ... если подключаем модуль"
+  // REF: user-message-2026-02-11
+  // SOURCE: n/a
+  // FORMAT THEOREM: ∀p ∈ RelativeImports: fileExists(p) → Valid(p)
+  // PURITY: SHELL
+  // INVARIANT: fallback only suppresses false positives for real files on disk
+  // COMPLEXITY: O(1)/O(1)
+  if (fileExistsOnDisk(resolvedPath)) return makeValidModuleResult()
 
   if (containsFile(index, resolvedPath)) return makeValidModuleResult()
   if (checkPathWithExtensionsInIndex(index, resolvedWithoutExtension)) return makeValidModuleResult()
@@ -146,7 +174,7 @@ const validateModulePathWithIndex = (
   }
 
   if (isPackageSpecifier(requestedPath)) {
-    return validatePackageModulePathWithIndex(index, requestedPath, node)
+    return validatePackageModulePathWithIndex(index, requestedPath, node, containingFile)
   }
 
   return validateRelativeModulePathWithIndex(index, node, requestedPath, containingFile)

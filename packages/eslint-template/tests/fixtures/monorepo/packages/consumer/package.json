@@ -1,0 +1,9 @@
+{
+  "name": "@acme/consumer",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "dependencies": {
+    "dep-from-consumer": "1.0.0"
+  }
+}

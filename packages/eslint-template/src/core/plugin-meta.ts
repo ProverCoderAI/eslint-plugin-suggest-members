@@ -9,5 +9,5 @@
 // INVARIANT: name != "" && version != "" && namespace != ""
 // COMPLEXITY: O(1)/O(1)
 export const name = "@prover-coder-ai/eslint-plugin-suggest-members"
-export const version = "0.0.16"
+export const version = "0.0.20"
 export const namespace = "eslint-plugin-suggest-members"
