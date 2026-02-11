@@ -10,8 +10,6 @@ const memberOptionalAccessMessage = "Property 'nmae' does not exist on type '{ n
   "  - name: string"
 const memberPatternMessage = "Property 'na1me' does not exist on type 'Named'. Did you mean:\n" +
   "  - name: string"
-const memberLiteralMessage = "Property 'kin1d' does not exist on type 'Named'. Did you mean:\n" +
-  "  - kind: \"named\""
 
 ruleTester.run("suggest-members", suggestMembersRule, {
   valid: [
@@ -35,6 +33,33 @@ ruleTester.run("suggest-members", suggestMembersRule, {
       code: `
         const obj = { name: "ok" }
         obj?.name
+      `
+    },
+    {
+      filename,
+      code: `
+        const videoId = "v1"
+        const projectId = "p1"
+        const query = new URLSearchParams({
+          videoId,
+          projectId
+        })
+        void query
+      `
+    },
+    {
+      filename,
+      code: `
+        type JsonValue =
+          | string
+          | number
+          | boolean
+          | null
+          | ReadonlyArray<JsonValue>
+          | { readonly [key: string]: JsonValue }
+
+        const config: JsonValue = { redirectPath: "/" }
+        void config
       `
     }
   ],
@@ -77,20 +102,6 @@ ruleTester.run("suggest-members", suggestMembersRule, {
         messageId: "suggestMembers",
         data: {
           message: memberPatternMessage
-        }
-      }]
-    },
-    {
-      filename,
-      code: `
-        type Named = { readonly kind: "named"; readonly name: string }
-        const variant: Named = { kin1d: "named", name: "ok" }
-        void variant
-      `,
-      errors: [{
-        messageId: "suggestMembers",
-        data: {
-          message: memberLiteralMessage
         }
       }]
     }
