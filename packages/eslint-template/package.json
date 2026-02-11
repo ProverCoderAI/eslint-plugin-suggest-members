@@ -17,7 +17,7 @@
     "@eslint-community/eslint-plugin-eslint-comments": "^4.6.0",
     "@eslint/compat": "2.0.2",
     "@eslint/eslintrc": "3.3.3",
-    "@eslint/js": "10.0.1",
+    "@eslint/js": "9.39.2",
     "@prover-coder-ai/eslint-plugin-suggest-members-aliased": "npm:@prover-coder-ai/eslint-plugin-suggest-members@0.0.20",
     "@ton-ai-core/vibecode-linter": "^1.0.11",
     "@types/node": "^25.2.3",
@@ -44,7 +44,7 @@
     "vitest": "^4.0.18"
   },
   "peerDependencies": {
-    "eslint": "^8.57.0 || ^9.0.0 || ^10.0.0",
+    "eslint": "^8.57.0 || ^9.0.0",
     "typescript": ">=4.8.4 <6.0.0"
   },
   "exports": {
