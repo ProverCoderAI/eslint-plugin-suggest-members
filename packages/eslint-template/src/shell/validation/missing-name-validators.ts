@@ -26,6 +26,7 @@ const missingNameConfig: MissingNameValidationConfig = {
 
 const localExportConfig: MissingNameValidationConfig = {
   symbolFlags: ts.SymbolFlags.Value |
+    ts.SymbolFlags.Alias |
     ts.SymbolFlags.Type |
     ts.SymbolFlags.Namespace |
     ts.SymbolFlags.Module,

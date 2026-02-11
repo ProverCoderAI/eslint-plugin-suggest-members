@@ -4,6 +4,7 @@ import { createRuleTester, resolveFixturePath } from "../utils/rule-tester.js"
 const ruleTester = createRuleTester()
 const filename = resolveFixturePath("consumer.ts")
 const monorepoFilename = resolveFixturePath("monorepo/packages/consumer/src/index.ts")
+const nodeBuiltinsFilename = resolveFixturePath("node-builtins/src/index.ts")
 const localModulePathMessage = "Cannot find module \"./module-paths/alhpa\". Did you mean:\n" +
   "  - ./module-paths/alpha\n" +
   "  - ./module-paths/beta"
@@ -39,6 +40,20 @@ ruleTester.run("suggest-module-paths", suggestModulePathsRule, {
       code: `
         import { moduleConfig } from "auth-admin/app/lib/auth-config"
         void moduleConfig
+      `
+    },
+    {
+      filename: nodeBuiltinsFilename,
+      code: `
+        import { resolve } from "path"
+        import crypto from "crypto"
+        import { pipeline } from "stream/promises"
+        import { tmpdir } from "os"
+
+        void resolve
+        void crypto
+        void pipeline
+        void tmpdir
       `
     }
   ],
