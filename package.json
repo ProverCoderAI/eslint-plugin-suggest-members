@@ -24,7 +24,7 @@
     "@changesets/changelog-github": "^0.5.2",
     "@changesets/cli": "^2.29.8",
     "@ton-ai-core/vibecode-linter": "^1.0.11",
-    "eslint": "^9.39.1",
+    "eslint": "^10.0.0",
     "install": "^0.13.0",
     "npm": "^11.9.0",
     "typescript": "^5.9.3"
@@ -47,6 +47,9 @@
       "@parcel/watcher",
       "msgpackr-extract",
       "unrs-resolver"
-    ]
+    ],
+    "patchedDependencies": {
+      "@typescript-eslint/eslint-plugin@8.55.0": "patches/@typescript-eslint__eslint-plugin@8.55.0.patch"
+    }
   }
 }
