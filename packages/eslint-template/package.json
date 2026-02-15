@@ -1,10 +1,10 @@
 {
   "dependencies": {
-    "@effect/platform": "^0.94.4",
+    "@effect/platform": "^0.94.5",
     "@effect/platform-node": "^0.104.1",
     "@effect/schema": "^0.75.5",
     "@typescript-eslint/utils": "8.55.0",
-    "effect": "^3.19.16"
+    "effect": "^3.19.17"
   },
   "devDependencies": {
     "@biomejs/biome": "^2.3.15",
@@ -25,16 +25,16 @@
     "@typescript-eslint/parser": "^8.55.0",
     "@typescript-eslint/rule-tester": "8.55.0",
     "@vitest/coverage-v8": "^4.0.18",
-    "eslint-doc-generator": "^3.0.2",
+    "eslint-doc-generator": "^3.1.0",
     "eslint-import-resolver-typescript": "^4.4.4",
     "eslint-plugin-codegen": "0.34.1",
-    "eslint-plugin-eslint-plugin": "^7.3.0",
+    "eslint-plugin-eslint-plugin": "^7.3.1",
     "eslint-plugin-import": "^2.32.0",
     "eslint-plugin-simple-import-sort": "^12.1.1",
     "eslint-plugin-sonarjs": "^3.0.7",
     "eslint-plugin-sort-destructure-keys": "^2.0.0",
     "eslint-plugin-unicorn": "^63.0.0",
-    "@vitest/eslint-plugin": "^1.6.7",
+    "@vitest/eslint-plugin": "^1.6.9",
     "globals": "^17.3.0",
     "jscpd": "^4.0.8",
     "ts-morph": "^27.0.2",
