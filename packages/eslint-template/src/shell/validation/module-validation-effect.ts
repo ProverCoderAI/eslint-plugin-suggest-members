@@ -94,8 +94,7 @@ const isPackageSpecifier = (value: string): boolean =>
 
 const fileExistsOnDisk = (filePath: string): boolean => ts.sys.fileExists(filePath)
 
-const normalizeBuiltinName = (value: string): string =>
-  value.startsWith("node:") ? value.slice(5) : value
+const normalizeBuiltinName = (value: string): string => value.startsWith("node:") ? value.slice(5) : value
 
 const nodeBuiltinModuleSet = new Set(
   builtinModules.map((name) => normalizeBuiltinName(name))

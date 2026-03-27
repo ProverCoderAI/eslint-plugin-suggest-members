@@ -49,7 +49,7 @@
       "unrs-resolver"
     ],
     "patchedDependencies": {
-      "@typescript-eslint/eslint-plugin@8.55.0": "patches/@typescript-eslint__eslint-plugin@8.55.0.patch"
+      "@typescript-eslint/eslint-plugin@8.57.2": "patches/@typescript-eslint__eslint-plugin@8.57.2.patch"
     }
   }
 }
