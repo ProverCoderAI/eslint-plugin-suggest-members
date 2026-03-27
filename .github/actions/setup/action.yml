@@ -4,13 +4,13 @@ inputs:
   node-version:
     description: The version of Node.js to install
     required: true
-    default: 20.16.0
+    default: 24.14.1
 
 runs:
   using: composite
   steps:
     - name: Install pnpm
-      uses: pnpm/action-setup@v3
+      uses: pnpm/action-setup@v5
     - name: Install node
       uses: actions/setup-node@v6
       with:
