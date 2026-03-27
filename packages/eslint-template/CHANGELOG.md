@@ -1,5 +1,11 @@
 # @prover-coder-ai/eslint-plugin-suggest-members
 
+## 0.0.26
+
+### Patch Changes
+
+- chore: automated version bump
+
 ## 0.0.25
 
 ### Patch Changes
