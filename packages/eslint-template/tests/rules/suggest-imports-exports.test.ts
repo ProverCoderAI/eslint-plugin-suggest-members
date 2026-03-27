@@ -1,6 +1,6 @@
 import { suggestExportsRule } from "../../src/rules/suggest-exports/index.js"
 import { suggestImportsRule } from "../../src/rules/suggest-imports/index.js"
-import { createRuleTester, resolveFixtureImportPath, resolveFixturePath } from "../utils/rule-tester.js"
+import { createRuleTester, resolveFixturePath } from "../utils/rule-tester.js"
 
 const ruleTester = createRuleTester()
 const filename = resolveFixturePath("consumer.ts")
@@ -16,7 +16,7 @@ const invalidImportCode = `
   useStae()
 `
 
-const exportsModulePath = resolveFixtureImportPath("modules/exports.ts")
+const exportsModulePath = "./modules/exports.js"
 
 const invalidImportMessage =
   `Export 'useStae' does not exist on type 'typeof import("${exportsModulePath}")'. Did you mean:\n` +
