@@ -18,7 +18,7 @@
     "@eslint/compat": "2.0.3",
     "@eslint/eslintrc": "3.3.5",
     "@eslint/js": "^10.0.1",
-    "@prover-coder-ai/eslint-plugin-suggest-members-aliased": "npm:@prover-coder-ai/eslint-plugin-suggest-members@0.0.25",
+    "@prover-coder-ai/eslint-plugin-suggest-members-aliased": "npm:@prover-coder-ai/eslint-plugin-suggest-members@0.0.26",
     "@ton-ai-core/vibecode-linter": "^1.0.11",
     "@types/node": "^25.5.0",
     "@typescript-eslint/eslint-plugin": "^8.57.2",
