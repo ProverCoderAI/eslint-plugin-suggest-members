@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "private": true,
   "description": "Monorepo workspace for effect-template",
-  "packageManager": "pnpm@10.33.0",
+  "packageManager": "pnpm@12.3.4",
   "workspaces": [
     "packages/*"
   ],
@@ -21,13 +21,13 @@
     "lint-app": "pnpm --filter @effect-template/app lint"
   },
   "devDependencies": {
-    "@changesets/changelog-github": "^0.6.0",
-    "@changesets/cli": "^2.30.0",
+    "@changesets/changelog-github": "^1.0.1",
+    "@changesets/cli": "^3.0.2",
     "@ton-ai-core/vibecode-linter": "^1.0.11",
-    "eslint": "^10.1.0",
+    "eslint": "^10.10.0",
     "install": "^0.13.0",
-    "npm": "^11.12.1",
-    "typescript": "^6.0.2"
+    "npm": "^12.0.2",
+    "typescript": "^7.0.2"
   },
   "repository": {
     "type": "git",
